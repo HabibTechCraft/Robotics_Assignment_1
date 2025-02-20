@@ -1,0 +1,212 @@
+#region VEXcode Generated Robot Configuration
+import math
+import random
+from vexcode_vr import *
+
+# Brain should be defined by default
+brain=Brain()
+
+drivetrain = Drivetrain("drivetrain", 0)
+pen = Pen("pen", 8)
+pen.set_pen_width(THIN)
+left_bumper = Bumper("leftBumper", 2)
+right_bumper = Bumper("rightBumper", 3)
+front_eye = EyeSensor("frontEye", 4)
+down_eye = EyeSensor("downEye", 5)
+front_distance = Distance("frontdistance", 6)
+distance = front_distance
+magnet = Electromagnet("magnet", 7)
+location = Location("location", 9)
+
+#endregion VEXcode Generated Robot Configuration
+#Dynamic Wall Maze Solution in Python
+
+import math
+import random
+from vexcode_vr import *
+from collections import deque 
+
+brain=Brain()
+drivetrain = Drivetrain("drivetrain", 0)
+pen = Pen("pen", 8)
+pen.set_pen_width(THIN)
+left_bumper = Bumper("leftBumper", 2)
+right_bumper = Bumper("rightBumper", 3)
+front_eye = EyeSensor("frontEye", 4)
+down_eye = EyeSensor("downEye", 5)
+front_distance = Distance("frontdistance", 6)
+distance = front_distance
+magnet = Electromagnet("magnet", 7)
+location = Location("location", 9)
+
+# Global variables for tracking the robot's path
+path_taken = [] 
+visited = set()
+visited_cells = []
+
+# Constants
+START_POS = (130, -900)
+CELL_SIZE = 250
+
+# Retrieves current position of the robot and returns co-ordinates in MM
+def get_current_position():
+    x = location.position(X, MM)
+    y = location.position(Y, MM)
+    return (int(x), int(y))
+
+# Sets the drivetrain speed for both movement and turning
+def set_speed():
+    drivetrain.set_drive_velocity(100, PERCENT)
+    drivetrain.set_turn_velocity(100, PERCENT)
+
+# Moves the robot forward by 25mm also by a cellsize as the whole maze was divided into cells 
+# with size of 25x25 to get the co-ordinates of the robot on the move
+def move_forward():
+    drivetrain.drive_for(FORWARD, CELL_SIZE, MM)
+    path_taken.append(('forward', 1))
+
+def turn_left():
+    drivetrain.turn_for(LEFT, 90, DEGREES)
+    path_taken.append(('turn_left', 90))
+
+def turn_right():
+    drivetrain.turn_for(RIGHT, 90, DEGREES)
+    path_taken.append(('turn_right', 90))
+
+# Helps to mark the path covered by the robot
+def mark_path():
+      pen.move(DOWN)
+      pen.set_pen_color(BLACK)
+
+# Step 1 Escaping the Maze
+# Uses Wall following algorithm specifically Left Hand Rule to find the quickest way possible for escape
+def Escape_maze():
+    set_speed()
+    while not down_eye.detect(RED):
+        pen.move(DOWN)
+        pen.set_pen_width(THIN)
+        pen.set_pen_color(GREEN)
+
+        if front_eye.detect(RED):
+            turn_left()
+        if not front_eye.detect(RED):
+            move_forward()
+            turn_right()
+
+# Step 2 Returning back to home
+# This function assists robot to get back to the starting point by reversing the recorded path
+def return_home(path_taken):
+
+    set_speed()
+    drivetrain.turn_for(LEFT, 180, DEGREES)
+    for move in reversed(path_taken):
+        action, value = move
+        if action == 'forward':
+            drivetrain.drive_for(FORWARD, 250, MM)
+        elif action == 'turn_left':
+            drivetrain.turn_for(RIGHT, 90, DEGREES)
+        elif action == 'turn_right':
+            drivetrain.turn_for(LEFT, 90, DEGREES)
+    return
+
+# Step3 Mapping the maze
+# Uses Breadth-First algorithm to explore the maze and do the mapping till the exit point.
+def BFS_MAP():
+    set_speed()
+    start_pos = get_current_position()
+    visited.add(start_pos)
+    visited_cells.append(start_pos)
+    queue = deque([start_pos])
+    brain.print("Started Cell: " + str(start_pos))
+    brain.new_line()
+    
+    while queue:
+        current_pos = queue.popleft()
+        mark_path()
+
+        for direction in ['forward', 'left', 'right']:
+            if front_eye.detect(RED): # If robot sees a wall in front, will take a left turn or else will keep moving forward
+                turn_left()
+            else:
+                move_forward()
+                new_pos = get_current_position() 
+                
+# Only stores new positions/ coordinates (X, Y) to create a map
+                if new_pos not in visited:
+                    visited.add(new_pos)
+                    visited_cells.append(new_pos)
+                    queue.append(new_pos)
+                    brain.print("Visited Cell: " + str(new_pos))
+                    brain.new_line()
+                turn_right()
+
+# If end of maze is reached, robot will stop exploring as the quickest way can be predicted 
+        if down_eye.detect(RED): 
+            return
+
+        if not queue:
+            return
+   
+            if down_eye.detect(RED):
+                return       
+
+# Uses BFS to find a shortest path from starting point to exit
+def find_shortest_path(start, end):
+    queue = deque([(start, [])])
+    visited = set()
+    visited.add(start)
+
+    while queue:
+        current_pos, path = queue.popleft()
+
+        if current_pos == end:
+            return path
+
+        for direction in ['forward', 'left', 'right']:
+            if direction == 'forward':
+                move_forward()
+            elif direction == 'left':
+                turn_left()
+            elif direction == 'right':
+                turn_right()
+            new_pos = get_current_position()
+
+            if new_pos not in visited:
+                visited.add(new_pos)
+                new_path = path + [direction]
+                queue.append((new_pos, new_path))
+
+    return None
+
+# Main function that runs when the program and controls the robot’s movement, mapping, and navigation.
+
+def Main():
+    set_speed()
+    #Escape_maze()
+    #return_home(path_taken)
+    BFS_MAP()
+
+    END_POS = get_current_position() # Get the final position after mapping
+    brain.print("End Position: " + str(END_POS))
+    # Calculates the shortest path
+    shortest_path = find_shortest_path(START_POS, END_POS)
+    
+    if shortest_path:
+        brain.print("Shortest Path: " + str(shortest_path))
+        for move in shortest_path:
+            if move == 'forward':
+                move_forward()
+            elif move == 'left':
+                turn_left()
+            elif move == 'right':
+                turn_right()
+            
+            if get_current_position() == END_POS:
+                brain.print("Reached end position.")
+                return
+    else:
+        brain.print("No path found")
+  
+stop_project()
+
+vr_thread(Main)
