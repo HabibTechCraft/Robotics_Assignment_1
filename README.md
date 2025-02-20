@@ -45,6 +45,11 @@ The BFS_MAP function employs a breadth-first search algorithm to explore and log
 The code is documented with comments to explain each function’s purpose and logic. For detailed understanding, refer to the inline comments throughout the code.
 
 ## References:
-Maze Exploration Algorithm for Small Mobile Platforms: https://www.researchgate.net/publication/315969093_Maze_Exploration_Algorithm_for_Small_Mobile_Platforms
-VEX VR Documentation: https://api.vex.com/vr/home/playgrounds/dynamic_wall_maze.html
-All You Need to Know About Breadth-First Search Algorithm: https://www.simplilearn.com/tutorials/data-structure-tutorial/bfs-algorithm
+Maze Exploration Algorithm for Small Mobile Platforms: 
+https://www.researchgate.net/publication/315969093_Maze_Exploration_Algorithm_for_Small_Mobile_Platforms
+
+VEX VR Documentation: 
+https://api.vex.com/vr/home/playgrounds/dynamic_wall_maze.html
+
+All You Need to Know About Breadth-First Search Algorithm: 
+https://www.simplilearn.com/tutorials/data-structure-tutorial/bfs-algorithm
